@@ -11,7 +11,6 @@ class PcapSolver:
     def __init__(self, filePath,filter=None):
         self.filePath = filePath
         self.cap = None
-        self.current_loop = contextvars.ContextVar("current_loop")
         if filter:
             self.filter = filter
             self.cap = pyshark.FileCapture(filePath,display_filter=filter)
@@ -247,7 +246,7 @@ if __name__ == "__main__":
 
 
     solver = PcapSolver(filePath,filter)
-    solver.batch_extract(source_dir='pcap', output_dir='csv')
+    # solver.batch_extract(source_dir='pcap', output_dir='csv')
     # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
-    # solver.info_detailed()
+    solver.info_detailed()
     # solver.info_mac()
