@@ -6,6 +6,7 @@ from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from csitool.read_pcap import NEXBeamformReader
 import os
+import pandas as pd
 
 def remove_data_with_high_variance(data):
     data = np.array(data)
@@ -38,15 +39,26 @@ def process_pcap(filepath, output_dir):
     pca = PCA(n_components=3)  #调用主成分分析
     csipca = pca.fit_transform(csi_matrix_squeezed)
     csipca = np.transpose(csipca)
+    print(csipca.shape)
+    x = csi_data.timestamps - csi_data.timestamps[0]
+    x = x[:csipca.shape[1]]  # 防止不一致
+
+    # 处理为csv数据
+    data = {'timestamp': x}
+    for i in range(csipca.shape[0]):
+        data[f'csipca_{i}'] = csipca[i][:len(x)]
+    
+    df = pd.DataFrame(data)
+    csv_path = os.path.join(output_dir, f"{file_name}.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"Saved CSV: {csv_path}")
+
+    # 仅对 PCA-0 做高方差裁剪后再画图
     csipca0 = remove_data_with_high_variance(csipca[0])
-    x = csi_data.timestamps  #获取时间戳
     x = csi_data.timestamps - csi_data.timestamps[0]
     x = x[:len(csipca0)]  # 同步裁剪
-    # print(x)
-
     plt.figure(figsize=(10, 6))
     plt.plot(x, csipca0, label='Subcarrier 0')
-    # plt.plot(x, csi_matrix_squeezed[:, 0], label='Subcarrier 2')
 
     plt.title("CSI Waveform for Subcarrier 0", fontsize=14)
     plt.xlabel("Frame Index (Time)", fontsize=12)
@@ -57,7 +69,6 @@ def process_pcap(filepath, output_dir):
     plt.savefig(output_path)
     plt.close()
     print(f"Saved: {output_path}")
-
 
 def batch_process_pcap_files(input_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
@@ -76,7 +87,7 @@ def main(datapath, out_path):
 
 if __name__ == "__main__":
     datapath = r'F:\Coding\wifi_sensing\data_set'
-    out_path = os.path.join(os.path.dirname(__file__), "output")
+    out_path = os.path.join(os.path.dirname(__file__), "csv_output")
     main(datapath, out_path)
 
 # 如果需要绘制多个子载波：
