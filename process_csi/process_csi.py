@@ -15,6 +15,7 @@ def remove_data_with_high_variance(data):
         if variance > 2:
             return data[0:i]
             break
+    return data
 
 def process_pcap(filepath, output_dir):
     my_reader = NEXBeamformReader()
@@ -29,46 +30,44 @@ def process_pcap(filepath, output_dir):
     # Then we'll squeeze it to remove the singleton dimensions.
     csi_matrix_squeeze = np.squeeze(csi_matrix_first)
     csi_matrix_squeezed = np.transpose(csi_matrix_squeeze)
-
+    # 调用主成分分析
     for x in range(no_subcarriers - 1):
-        csi_matrix_squeezed[x] = lowpass(csi_matrix_squeezed[x], 3, 50, 5)  #调用低通滤波器
-        #csi_matrix_squeezed[x] = hampel(csi_matrix_squeezed[x], 10, 3)
-        #csi_matrix_squeezed[x] = running_mean(csi_matrix_squeezed[x], 10)
+        csi_matrix_squeezed[x] = lowpass(csi_matrix_squeezed[x], 3, 50, 5)
 
     csi_matrix_squeezed = np.transpose(csi_matrix_squeezed)
-    pca = PCA(n_components=3)  #调用主成分分析
+    pca = PCA(n_components=20)
     csipca = pca.fit_transform(csi_matrix_squeezed)
     csipca = np.transpose(csipca)
-    print(csipca.shape)
-    x = csi_data.timestamps - csi_data.timestamps[0]
-    x = x[:csipca.shape[1]]  # 防止不一致
-
-    # 处理为csv数据
-    data = {'timestamp': x}
-    for i in range(csipca.shape[0]):
-        data[f'csipca_{i}'] = csipca[i][:len(x)]
     
-    df = pd.DataFrame(data)
-    csv_path = os.path.join(output_dir, f"{file_name}.csv")
-    df.to_csv(csv_path, index=False)
-    print(f"Saved CSV: {csv_path}")
+    # 处理为csv数据
+    # data = {'timestamp': x}
+    # for i in range(csipca.shape[0]):
+    #     data[f'csipca_{i}'] = csipca[i][:len(x)]
+    
+    # df = pd.DataFrame(data)
+    # csv_path = os.path.join(output_dir, f"{file_name}.csv")
+    # df.to_csv(csv_path, index=False)
+    # print(f"Saved CSV: {csv_path}")
 
     # 仅对 PCA-0 做高方差裁剪后再画图
-    csipca0 = remove_data_with_high_variance(csipca[0])
-    x = csi_data.timestamps - csi_data.timestamps[0]
-    x = x[:len(csipca0)]  # 同步裁剪
-    plt.figure(figsize=(10, 6))
-    plt.plot(x, csipca0, label='Subcarrier 0')
+    for i in range(20):
+        x = csi_data.timestamps - csi_data.timestamps[0]
+        csipca0 = remove_data_with_high_variance(csipca[i])
+        sub_output_dir = os.path.join(output_dir, f"subcarrier_{i}")
+        os.makedirs(sub_output_dir, exist_ok=True)
+        x = x[:len(csipca0)]
+        plt.figure(figsize=(10, 6))
+        plt.plot(x, csipca0, label='')
 
-    plt.title("CSI Waveform for Subcarrier 0", fontsize=14)
-    plt.xlabel("Frame Index (Time)", fontsize=12)
-    plt.ylabel("Amplitude", fontsize=12)
-    plt.legend(fontsize=12)
-    plt.grid(True)
-    output_path = os.path.join(output_dir, f"{file_name}.jpg")
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Saved: {output_path}")
+        plt.title("", fontsize=14)
+        plt.xlabel("", fontsize=12)
+        plt.ylabel("", fontsize=12)
+        plt.legend(fontsize=12)
+        # plt.grid(True)
+        output_path = os.path.join(sub_output_dir, f"{file_name}_sub_{i}.jpg")
+        plt.savefig(output_path)
+        plt.close()
+        print(f"Saved: {output_path}")
 
 def batch_process_pcap_files(input_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
@@ -87,7 +86,7 @@ def main(datapath, out_path):
 
 if __name__ == "__main__":
     datapath = r'F:\Coding\wifi_sensing\data_set'
-    out_path = os.path.join(os.path.dirname(__file__), "csv_output")
+    out_path = os.path.join(os.path.dirname(__file__), "PCA_output")
     main(datapath, out_path)
 
 # 如果需要绘制多个子载波：
