@@ -39,7 +39,7 @@ class img_loader(data.Dataset):
         elif label == 1:
             label = 1
         elif label == 4:
-            label = 1
+            label = 2
         
         
         if self.transform:

@@ -66,7 +66,7 @@ class CSV_Solver:
         self.df['time_interval'] = self.time_interval
         # 保存分组后的数据到csv文件
         self.df.to_csv(path, index=False)
-        print(f"Grouped data saved to {path}")
+        # print(f"Grouped data saved to {path}")
     
     def batch_group_by_time(self, source_dir=None, output_dir=None, time_interval=1):
         """

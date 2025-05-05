@@ -55,7 +55,7 @@ def run(device,type = 'seq'):
         input_size = 3
         hidden_size = 512  # 卷积层输出大小
 
-    num_classes = 2  # 分类数量
+    num_classes = 3  # 分类数量
     learning_rate = 0.001  # 学习率
     num_epochs = 10  # 训练轮数
 
@@ -87,8 +87,12 @@ def run(device,type = 'seq'):
         #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         # ])
         dataset = img_loader(source_dir='csv_img')
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=4)
-    # test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,num_workers=4)
+    # 切分数据集
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,num_workers=4)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False,num_workers=4)
 
     net = model.to(device)
     if type == 'seq':
@@ -167,17 +171,34 @@ def run(device,type = 'seq'):
                 writer.add_scalar('train_loss', sum_loss / (i + 1), epoch + 1)
                 global_train_acc.append(100. * correct / total)
 
-            scheduler.step()
-            acc = 100 * correct / total
-            print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {sum_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
-            writer.add_scalar('Loss/train', sum_loss / len(train_loader), epoch)
-            writer.add_scalar('Accuracy/train', acc, epoch)
-            global_train_acc.append(acc)
+            print("Waiting Test!")
+            with torch.no_grad():
+                correct = 0
+                total = 0
+                for data in test_loader:
+                    net.eval()
+                    images, labels = data
+                    images, labels = images.to(device), labels.to(device)
+                    outputs,outpspa,outpcga,afespa,afecga = net(images)
+                    _, predicted = torch.max(outputs.data, 1)
+                    total += labels.size(0)
+                    correct += (predicted == labels).sum()
+                print('Test Acc：%.3f%%' % (100. * correct / total))
+                acc = 100. * correct / total
 
-            if acc > best_acc:
-                best_acc = acc
-                torch.save(model.state_dict(), 'best_model.pth')
-                print(f"Model saved with accuracy: {best_acc:.2f}%")
+                if acc > best_acc:
+                    best_acc = acc
+                    torch.save(model.state_dict(), 'best_model.pth')
+                    print(f"Model saved with accuracy: {best_acc:.2f}%")
+                global_test_acc.append(acc)
+            scheduler.step()
+            # acc = 100 * correct / total
+            # print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {sum_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
+            # writer.add_scalar('Loss/train', sum_loss / len(train_loader), epoch)
+            # writer.add_scalar('Accuracy/train', acc, epoch)
+            # global_train_acc.append(acc)
+
+
         print("Training finished.")
     
 

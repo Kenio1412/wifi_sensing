@@ -143,7 +143,7 @@ class PcapSolver:
         print(f"you have {good} packets with WLAN layer.")
         print(f"Bob's packets: {len(packet_to_save)}")
 
-    def extract(self,source = None, path=None):
+    def extract(self,source = None, path=None,target_mac=None):
         """
         @brief: 提取数据包中的信息
         @param source: pcap文件路径，默认为None，表示使用初始化时指定的文件路径
@@ -164,7 +164,7 @@ class PcapSolver:
             n += 1
             try:
                 ra = packet.wlan.ra
-                if ra != bob_mac: # 只处理Bob接收的包
+                if ra != target_mac: # 只处理Bob接收的包
                     continue
                 timestamp = packet.sniff_time
                 length = packet.length
@@ -214,9 +214,11 @@ class PcapSolver:
     #     await asyncio.gather(*tasks)
     #     print('All files processed.')
 
-    def batch_extract(self,source_dir = None, output_dir=None, max_workers=4):
+    def batch_extract(self,source_dir = None, output_dir=None, max_workers=4,source_list=None,offset=0,target_mac=None):
         if not source_dir:
             source_dir = 'pcap'
+        if not source_list:
+            source_list = os.listdir(source_dir)
         if not output_dir:
             output_dir = 'csv'
         if not os.path.exists(output_dir):
@@ -224,12 +226,18 @@ class PcapSolver:
         if not os.path.exists(source_dir):
             raise FileNotFoundError(f"Source directory {source_dir} does not exist.")
         
-        for file in tqdm.tqdm(os.listdir(source_dir), desc="Processing", unit="items"):
+        for file in tqdm.tqdm(source_list, desc="Processing", unit="items"):
             if file.endswith('.pcap'):
                 file_path = os.path.join(source_dir, file)
-                output_path = os.path.join(output_dir, file.replace('.pcap', '.csv'))
+                if offset == 0:
+                    output_path = os.path.join(output_dir, file.replace('.pcap', '.csv'))
+                else:
+                    file_name = file.split('.')[0]
+                    file_name, num = file_name.split('_')
+                    num = int(num) + offset
+                    output_path = os.path.join(output_dir, f"{file_name}_{num}.csv")
                 print(f"Processing {file_path}")
-                self.extract(file_path,output_path)
+                self.extract(file_path,output_path,target_mac=target_mac)
                 print(f"Bob's packets saved to {output_path}")
         
         
@@ -237,7 +245,8 @@ class PcapSolver:
 if __name__ == "__main__":
     filePath = 'pcap/1_1.pcap'
     bob_mac = 'f0:57:a6:a6:b6:b6'
-    filter = 'wlan.addr == f0:57:a6:a6:b6:b6'
+    lxn_mac = '84:1b:77:6b:d5:3c'
+    filter = f'wlan.addr == {lxn_mac}'
 
     if(os.path.exists(filePath)):
         print(f"File {filePath} does exist.")
@@ -246,7 +255,20 @@ if __name__ == "__main__":
 
 
     solver = PcapSolver(filePath,filter)
-    # solver.batch_extract(source_dir='pcap', output_dir='csv')
+    source_list = []
+    for file in os.listdir('pcap'):
+        if file.startswith('output'):
+            continue
+        file_name = file.split('.')[0]
+        file_name, num = file_name.split('_')
+        num = int(num)
+        if file_name == '1' and num > 15 and num <= 30:
+            source_list.append(file)
+        # if file_name == '1' and num > 45:
+        #     source_list.append(file)
+        if file_name == '5' :
+            source_list.append(file)
+    solver.batch_extract(source_dir='pcap', output_dir='csv',source_list=source_list,offset=15,target_mac=lxn_mac)
     # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
-    solver.info_detailed()
+    # solver.info_detailed()
     # solver.info_mac()

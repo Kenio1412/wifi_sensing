@@ -14,7 +14,7 @@ class DACN(nn.Module):
         super(DACN, self).__init__()
         self.spa = SpatialGate()
         self.cga = ChannelGate(512)
-        resnet = models.resnet18(pretrained=True)
+        resnet = models.resnet18(weights='DEFAULT')
         self.features = nn.Sequential(*list(resnet.children())[:-2])  
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(512,6)
