@@ -1,15 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model import SeqClassifierVarLen
+from model import SeqClassifierVarLen , DACN
 from csv_loader import CSVLoader
+from img_loader import img_loader
 import os
 from tensorboardX import SummaryWriter
+import torchvision.transforms as transforms
 
 
 def get_model(model_name, input_size, hidden_size, num_classes):
     if model_name == 'SeqClassifierVarLen':
         return SeqClassifierVarLen(input_size, hidden_size, num_classes)
+    elif model_name == 'DACN':
+        return DACN(num_classes=num_classes)
     else:
         raise ValueError(f"Model {model_name} not found.")
 
@@ -38,24 +42,32 @@ def get_scheduler(optimizer, scheduler_name, step_size, gamma):
         raise ValueError(f"Scheduler {scheduler_name} not found.")
 
 
-def run(device):
+def run(device,type = 'seq'):
     # 设置随机种子
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
 
     # 超参数设置
-    input_size = 1  # 输入特征维度
-    hidden_size = 128  # LSTM隐藏层大小
+    if type == 'seq':
+        input_size = 1  # 输入特征维度
+        hidden_size = 128*2  # LSTM隐藏层大小
+    elif type == 'img':
+        input_size = 3
+        hidden_size = 512  # 卷积层输出大小
+
     num_classes = 2  # 分类数量
     learning_rate = 0.001  # 学习率
     num_epochs = 10  # 训练轮数
 
     # 模型、优化器、损失函数和学习率调度器的选择
-    model_name = 'SeqClassifierVarLen'
+    if type == 'seq':
+        model_name = 'SeqClassifierVarLen'
+    elif type == 'img':
+        model_name = 'DACN'
     optimizer_name = 'adam'
     loss_name = 'cross_entropy'
     scheduler_name = 'step_lr'
-    step_size = 5
+    step_size = 2
     gamma = 0.1
     batch_size = 32
 
@@ -66,54 +78,111 @@ def run(device):
     scheduler = get_scheduler(optimizer, scheduler_name, step_size, gamma)
 
     # 创建数据集和数据加载器
-    dataset = CSVLoader(source_dir='csv_group')
+    if type == 'seq':
+        dataset = CSVLoader(source_dir='csv_group')
+    elif type == 'img':
+        # transform = transforms.Compose([
+        #     transforms.Resize((224, 224)),
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        # ])
+        dataset = img_loader(source_dir='csv_img')
     train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=4)
-    test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,num_workers=4)
+    # test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,num_workers=4)
 
     net = model.to(device)
+    if type == 'seq':
 
-    writer = SummaryWriter(log_dir='logs')
-    best_acc = 50.0
-    global_train_acc = []
-    global_test_acc = []
-    print("Start training...")
+        writer = SummaryWriter(log_dir='logs')
+        best_acc = 50.0
+        global_train_acc = []
+        global_test_acc = []
+        print("Start training...")
 
-    for epoch in range(num_epochs):
-        print(f"Epoch {epoch + 1}/{num_epochs}")
-        model.train()
-        running_loss = 0.0
-        correct = 0
-        total = 0
-        for i, (inputs, labels,lengths) in enumerate(train_loader,0):
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs.unsqueeze(2), lengths=lengths)
-            assert outputs.shape[0] == labels.shape[0], f"Output shape {outputs.shape} does not match label shape {labels.shape}"
-            loss = loss_function(outputs, labels)
-            loss.backward()
-            optimizer.step()
+        for epoch in range(num_epochs):
+            print(f"Epoch {epoch + 1}/{num_epochs}")
+            model.train()
+            running_loss = 0.0
+            correct = 0
+            total = 0
+            for i, (inputs, labels,lengths) in enumerate(train_loader,0):
+                inputs, labels = inputs.to(device), labels.to(device)
+                optimizer.zero_grad()
+                if type == 'seq':
+                    outputs = model(inputs.unsqueeze(2), lengths=lengths)
+                # assert outputs.shape[0] == labels.shape[0], f"Output shape {outputs.shape} does not match label shape {labels.shape}"
+                loss = loss_function(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+                running_loss += loss.item()
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
 
-        scheduler.step()
-        acc = 100 * correct / total
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
-        writer.add_scalar('Loss/train', running_loss / len(train_loader), epoch)
-        writer.add_scalar('Accuracy/train', acc, epoch)
-        global_train_acc.append(acc)
+            scheduler.step()
+            acc = 100 * correct / total
+            print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
+            writer.add_scalar('Loss/train', running_loss / len(train_loader), epoch)
+            writer.add_scalar('Accuracy/train', acc, epoch)
+            global_train_acc.append(acc)
 
-        if acc > best_acc:
-            best_acc = acc
-            torch.save(model.state_dict(), 'best_model.pth')
-            print(f"Model saved with accuracy: {best_acc:.2f}%")
-    print("Training finished.")
+            if acc > best_acc:
+                best_acc = acc
+                torch.save(model.state_dict(), 'best_model.pth')
+                print(f"Model saved with accuracy: {best_acc:.2f}%")
+        print("Training finished.")
+
+    elif type == 'img':
+        writer = SummaryWriter('./logs_img')
+        global_train_acc = []
+        global_test_acc = []
+        print("Start training...")
+        best_acc = 50
+
+        for epoch in range(0, num_epochs):
+            print('\nEpoch: %d' % (epoch + 1))
+            net.train()
+            sum_loss = 0.0
+            correct = 0.0
+            total = 0.0
+            for i, data in enumerate(train_loader, 0):
+
+                length = len(train_loader)
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
+                optimizer.zero_grad()
+                outputs,outpspa,outpcga,afespa,afecga = net(inputs)
+                loss = loss_function(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                sum_loss += loss.item()
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += predicted.eq(labels.data).cpu().sum()
+                print('[epoch:%d, iter:%d] Loss: %.03f | Acc: %.3f%% '
+                    % (epoch + 1, (i + 1), sum_loss / (i + 1), 100. * correct / total))
+
+                writer.add_scalar('train_loss', sum_loss / (i + 1), epoch + 1)
+                global_train_acc.append(100. * correct / total)
+
+            scheduler.step()
+            acc = 100 * correct / total
+            print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {sum_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
+            writer.add_scalar('Loss/train', sum_loss / len(train_loader), epoch)
+            writer.add_scalar('Accuracy/train', acc, epoch)
+            global_train_acc.append(acc)
+
+            if acc > best_acc:
+                best_acc = acc
+                torch.save(model.state_dict(), 'best_model.pth')
+                print(f"Model saved with accuracy: {best_acc:.2f}%")
+        print("Training finished.")
     
 
 if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
-    run(device)
+    run(device,type='img')
     
