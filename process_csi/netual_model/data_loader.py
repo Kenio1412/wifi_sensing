@@ -24,7 +24,13 @@ class CSISubcarrierDataset(data.Dataset):
             if filename.endswith(".jpg"):
                 parts = filename.split("-")
                 label = int(parts[0]) - 1  # 假设类别是 1~5，转为 0~4
-                self.jpg_file.append(os.path.join(root_dir, filename))
+                if label == 0 or label == 1 or label == 4:
+                    label = 0
+                elif label == 3 :
+                    lable = 2
+                else:
+                    label = 1
+                self.jpg_file.append(os.path.join(sub_dir, filename))
                 self.jpg_labels.append(label)
 
         self.count = len(self.jpg_file)
@@ -36,8 +42,11 @@ class CSISubcarrierDataset(data.Dataset):
         @return: 图片路径
         """
         img_path = self.jpg_file[index]
+        # print(Image.open(img_path).size)
         label = self.jpg_labels[index]
-        img = Image.open(img_path).convert('RGB').resize((224, 224))
+        img = Image.open(img_path)
+        # print(img.size)
+        # img.show()
 
         if self.transform:
             img = self.transform(img)
@@ -48,4 +57,11 @@ class CSISubcarrierDataset(data.Dataset):
         @brief: 获取图片数量
         @return: 图片数量
         """
-        return self.n_data
+        return self.count
+    
+# if __name__ == "__main__":
+#     path = r'G:\Coding\wifi_sensing\process_csi\PCA_output\subcarrier_0\1-1_sub_0.jpg'
+#     print(Image.open(path).size)
+#     img = Image.open(path).convert('RGB')
+#     print(img.size)
+#     img.show()
