@@ -5,7 +5,7 @@ from model import SeqClassifierVarLen , DACN
 import os
 from tensorboardX import SummaryWriter
 import torchvision.transforms as transforms
-from data_loader import CSISubcarrierDataset
+from data_loader import CSIDataset
 
 
 def get_model(model_name, input_size, hidden_size, num_classes):
@@ -55,96 +55,96 @@ def run(device,type = 'seq'):
     num_epochs = 10  # 训练轮数
 
     # 模型、优化器、损失函数和学习率调度器的选择
-    if type == 'seq':
-        model_name = 'SeqClassifierVarLen'
-    elif type == 'img':
-        model_name = 'DACN'
+    model_name = 'DACN'
     optimizer_name = 'adam'
     loss_name = 'cross_entropy'
     scheduler_name = 'step_lr'
     step_size = 2
     gamma = 0.1
     batch_size = 32
-
     # 创建模型、优化器、损失函数和学习率调度器
     model = get_model(model_name, input_size, hidden_size, num_classes).to(device)
     optimizer = get_optimizer(model, optimizer_name, learning_rate)
     loss_function = get_loss_function(loss_name)
     scheduler = get_scheduler(optimizer, scheduler_name, step_size, gamma)
+    with open(f"raining_log.txt", "w") as log_file:
+        model = get_model(model_name, input_size, hidden_size, num_classes).to(device)
+        optimizer = get_optimizer(model, optimizer_name, learning_rate)
+        loss_function = get_loss_function(loss_name)
+        scheduler = get_scheduler(optimizer, scheduler_name, step_size, gamma)
+        dataset = CSIDataset(root_dir='F:\\Coding\\wifi_sensing\\process_csi\\PCA_Sum_output', transform=None)
+        # print(len(dataset))
+        if len(dataset) == 0:
+            print("数据集为空，请检查数据集路径和文件格式。")
+            return
+        # 切分数据集
+        train_size = int(0.8 * len(dataset))
+        test_size = len(dataset) - train_size
+        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,num_workers=4)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False,num_workers=4)
 
-    dataset = CSISubcarrierDataset(root_dir='G:\\Coding\\wifi_sensing\\process_csi\\PCA_output', subcarrier_idx=0, transform=None)
-    # 切分数据集
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,num_workers=4)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False,num_workers=4)
+        net = model.to(device)
 
-    net = model.to(device)
+        writer = SummaryWriter('./logs_img')
+        global_train_acc = []
+        global_test_acc = []
+        print("Start training...")
+        best_acc = 50
+        print(f"====== Start training======")
+        log_file.write(f"====== Start training======\n")
+        for epoch in range(0, num_epochs):
+            print('\nEpoch: %d' % (epoch + 1))
+            net.train()
+            sum_loss = 0.0
+            correct = 0.0
+            total = 0.0
+            for i, data in enumerate(train_loader, 0):
 
-    writer = SummaryWriter('./logs_img')
-    global_train_acc = []
-    global_test_acc = []
-    print("Start training...")
-    best_acc = 50
+                length = len(train_loader)
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
+                optimizer.zero_grad()
+                outputs,outpspa,outpcga,afespa,afecga = net(inputs)
+                loss = loss_function(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-    for epoch in range(0, num_epochs):
-        print('\nEpoch: %d' % (epoch + 1))
-        net.train()
-        sum_loss = 0.0
-        correct = 0.0
-        total = 0.0
-        for i, data in enumerate(train_loader, 0):
-
-            length = len(train_loader)
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs,outpspa,outpcga,afespa,afecga = net(inputs)
-            loss = loss_function(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            sum_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += predicted.eq(labels.data).cpu().sum()
-            print('[epoch:%d, iter:%d] Loss: %.03f | Acc: %.3f%% '
-                % (epoch + 1, (i + 1), sum_loss / (i + 1), 100. * correct / total))
-
-            writer.add_scalar('train_loss', sum_loss / (i + 1), epoch + 1)
-            global_train_acc.append(100. * correct / total)
-
-        print("Waiting Test!")
-        with torch.no_grad():
-            correct = 0
-            total = 0
-            for data in test_loader:
-                net.eval()
-                images, labels = data
-                images, labels = images.to(device), labels.to(device)
-                outputs,outpspa,outpcga,afespa,afecga = net(images)
+                sum_loss += loss.item()
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
-                correct += (predicted == labels).sum()
-            print('Test Acc：%.3f%%' % (100. * correct / total))
-            acc = 100. * correct / total
+                correct += predicted.eq(labels.data).cpu().sum()
+                print('[epoch:%d, iter:%d] Loss: %.03f | Acc: %.3f%% '
+                    % (epoch + 1, (i + 1), sum_loss / (i + 1), 100. * correct / total))
+                log_file.write('[epoch:%d, iter:%d] Loss: %.03f | Acc: %.3f%% \n'
+                    % (epoch + 1, (i + 1), sum_loss / (i + 1), 100. * correct / total))
+                writer.add_scalar('train_loss', sum_loss / (i + 1), epoch + 1)
+                global_train_acc.append(100. * correct / total)
 
-            if acc > best_acc:
-                best_acc = acc
-                torch.save(model.state_dict(), 'best_model.pth')
-                print(f"Model saved with accuracy: {best_acc:.2f}%")
-            global_test_acc.append(acc)
-        scheduler.step()
-        # acc = 100 * correct / total
-        # print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {sum_loss / len(train_loader):.4f}, Accuracy: {acc:.2f}%")
-        # writer.add_scalar('Loss/train', sum_loss / len(train_loader), epoch)
-        # writer.add_scalar('Accuracy/train', acc, epoch)
-        # global_train_acc.append(acc)
+            print("Waiting Test!")
+            with torch.no_grad():
+                correct = 0
+                total = 0
+                for data in test_loader:
+                    net.eval()
+                    images, labels = data
+                    images, labels = images.to(device), labels.to(device)
+                    outputs,outpspa,outpcga,afespa,afecga = net(images)
+                    _, predicted = torch.max(outputs.data, 1)
+                    total += labels.size(0)
+                    correct += (predicted == labels).sum()
+                print('Test Acc：%.3f%%' % (100. * correct / total))
+                acc = 100. * correct / total
 
+                if acc > best_acc:
+                    best_acc = acc
+                    torch.save(model.state_dict(), f'best_model.pth')
+                    log_file.write(f"Best model saved with acc: {best_acc:.2f}%\n")
+                global_test_acc.append(acc)
+            scheduler.step()
+        log_file.write(f"Best Test Acc: {best_acc:.3f}%\n")
+        print(f"Finished training , best acc: {best_acc:.2f}%")
 
-    print("Training finished.")
-    
 
 if __name__ == "__main__":
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

@@ -13,3 +13,8 @@
 ## -pcap_to_jpg.py
 
 直接对`pcap`包中的CSI数据进行处理，不进行主成分分析，并且绘制前20个子载波的jpg图像
+
+## netual_model
+
+存放训练CSI对应波形图的训练模型
+
