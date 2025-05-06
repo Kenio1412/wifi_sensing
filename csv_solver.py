@@ -84,7 +84,9 @@ class CSV_Solver:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         for file in tqdm(os.listdir(source_dir), desc="Processing", unit="files"):
-            if file.endswith('.csv'):
+            if file.endswith('.csv') :
+                if os.path.exists(os.path.join(output_dir, file)):
+                    continue
                 self.read_csv(os.path.join(source_dir, file))
                 self.group_by_time(time_interval, os.path.join(output_dir, file))
         

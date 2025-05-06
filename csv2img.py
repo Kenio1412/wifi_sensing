@@ -64,7 +64,10 @@ class CSV2Img:
             raise ValueError(f"Source directory {source_dir} does not exist.")
         for file in tqdm(os.listdir(source_dir), desc="Processing", unit="files"):
             if file.endswith('.csv') and file != 'output.csv':
-                self.csv_to_img(os.path.join(source_dir, file), os.path.join(output_dir, file.replace('.csv', '.jpg')))
+                file_name =file.replace('.csv', '.jpg')
+                if os.path.exists(os.path.join(output_dir, file_name)):
+                    continue
+                self.csv_to_img(os.path.join(source_dir, file), os.path.join(output_dir, file_name))
 
     def read_img(self, path='csv_img/1_1.jpg'):
         """

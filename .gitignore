@@ -2,3 +2,4 @@ logs
 logs_img
 __pycache__
 git_flush.bat
+best_model.pth

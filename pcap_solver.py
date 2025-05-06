@@ -262,13 +262,13 @@ if __name__ == "__main__":
         file_name = file.split('.')[0]
         file_name, num = file_name.split('_')
         num = int(num)
-        if file_name == '1' and num > 15 and num <= 30:
-            source_list.append(file)
-        # if file_name == '1' and num > 45:
+        # if file_name == '1' and num > 15 and num <= 30:
         #     source_list.append(file)
-        if file_name == '5' :
+        if file_name == '1' and num > 45:
             source_list.append(file)
-    solver.batch_extract(source_dir='pcap', output_dir='csv',source_list=source_list,offset=15,target_mac=lxn_mac)
+        # if file_name == '5' :
+        #     source_list.append(file)
+    solver.batch_extract(source_dir='pcap', output_dir='csv',source_list=source_list,offset=25,target_mac=lxn_mac)
     # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
     # solver.info_detailed()
     # solver.info_mac()
