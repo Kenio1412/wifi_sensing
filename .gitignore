@@ -1,5 +1,8 @@
 logs
 logs_img
+pcap
+csv
+csv_group
 __pycache__
 git_flush.bat
 best_model.pth
