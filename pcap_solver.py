@@ -178,10 +178,10 @@ class PcapSolver:
                 packet_list.append({'timestamp': timestamp,'length' : length, 'ra' : ra})
         df = pd.DataFrame(packet_list)
         df.to_csv(path)
-        print(f"Total packets: {n}")
-        print(f"you have {good} packets with WLAN layer.")
-        print(f"Bob's packets: {len(packet_list)}")
-        print("Bob's packets saved to {path}")
+        # print(f"Total packets: {n}")
+        # print(f"you have {good} packets with WLAN layer.")
+        # print(f"Bob's packets: {len(packet_list)}")
+        # print("Bob's packets saved to {path}")
 
     # async def batch_extract(self,source_dir = None, output_dir=None, max_workers=4):
     #     if not source_dir:
@@ -231,6 +231,8 @@ class PcapSolver:
                 file_path = os.path.join(source_dir, file)
                 if offset == 0:
                     output_path = os.path.join(output_dir, file.replace('.pcap', '.csv'))
+                    if os.path.exists(output_path):
+                        continue
                 else:
                     file_name = file.split('.')[0]
                     file_name, num = file_name.split('_')
@@ -238,10 +240,8 @@ class PcapSolver:
                     output_path = os.path.join(output_dir, f"{file_name}_{num}.csv")
                 print(f"Processing {file_path}")
                 self.extract(file_path,output_path,target_mac=target_mac)
-                print(f"Bob's packets saved to {output_path}")
-        
-        
-        
+                # print(f"Bob's packets saved to {output_path}")
+
 if __name__ == "__main__":
     filePath = 'pcap/1_1.pcap'
     bob_mac = 'f0:57:a6:a6:b6:b6'
@@ -257,18 +257,20 @@ if __name__ == "__main__":
     solver = PcapSolver(filePath,filter)
     source_list = []
     for file in os.listdir('pcap'):
+        if not file.endswith('.pcap'):
+            continue
         if file.startswith('output'):
             continue
         file_name = file.split('.')[0]
         file_name, num = file_name.split('_')
         num = int(num)
-        # if file_name == '1' and num > 15 and num <= 30:
-        #     source_list.append(file)
-        if file_name == '1' and num > 45:
+        if (file_name == '2' or file_name == '3' or file_name == '4') and num > 15 and num <= 30:
             source_list.append(file)
+        # if file_name == '1' and num > 45:
+        #     source_list.append(file)
         # if file_name == '5' :
         #     source_list.append(file)
-    solver.batch_extract(source_dir='pcap', output_dir='csv',source_list=source_list,offset=25,target_mac=lxn_mac)
+    solver.batch_extract(source_dir='pcap', output_dir='csv',target_mac=lxn_mac,source_list=source_list,offset=15)
     # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
     # solver.info_detailed()
     # solver.info_mac()
