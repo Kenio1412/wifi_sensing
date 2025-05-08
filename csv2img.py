@@ -46,12 +46,10 @@ class CSV2Img:
         @return: None
         """
         self.read_csv(source)
-        # 绘制time_column-length曲线图
         plt.figure(figsize=(10, 5))
         plt.plot(self.df[self.time_column], self.df[self.length])
         plt.savefig(output)
         plt.close()
-        # print(f"Image saved to {output}")
     
     def batch_csv_to_img(self, source_dir='csv_group', output_dir='csv_img'):
         """
