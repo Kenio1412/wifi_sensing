@@ -6,3 +6,5 @@ csv_group
 __pycache__
 git_flush.bat
 best_model.pth
+fig
+data_set

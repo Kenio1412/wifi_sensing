@@ -78,9 +78,36 @@ class CSV2Img:
         img = Image.open(path)
         print(f"Image size: {img.size}")
 
+    
+
 if __name__ == '__main__':
-    csv2img = CSV2Img()
-    csv2img.batch_csv_to_img(source_dir='csv_group',output_dir='csv_img')
+    # csv2img = CSV2Img()
+    # csv2img.batch_csv_to_img(source_dir='csv_group',output_dir='csv_img')
     # csv2img.read_img(path='csv_img/1_1.jpg')
-        
+    
+    csv_path = ['1_2.csv','2_9.csv','5_10.csv']
+    timestamp = []
+    num = []
+    for path in csv_path:
+        path = os.path.join('csv_group', path)
+        df = pd.read_csv(path)
+        df['timestamp'] = df['timestamp'].apply(sniff_time_to_timestamp)
+        df['length'] = df['length'].astype(int)
+        df = df.sort_values(by='timestamp')
+        timestamp.append([i for i in range(len(df['timestamp'][1:-1]))])
+        num.append(df['length'][1:-1])
+    # 绘制time_column-length曲线图
+    fig , axs = plt.subplots(1, 3, figsize=(15, 6))
+    for i in range(3):
+        axs[i].plot(timestamp[i], num[i])
+        axs[i].set_title(f'situation {i+1}')
+        axs[i].set_xlabel('time')
+        axs[i].set_ylabel('length')
+    plt.tight_layout()
+    # 将纵坐标的范围设置为0到50000
+    for ax in axs:
+        ax.set_ylim(0, 50000)
+    
+    # 设置标题
+    plt.savefig('fig/data_fig1.jpg')
         

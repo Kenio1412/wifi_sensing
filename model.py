@@ -17,7 +17,7 @@ class DACN(nn.Module):
         resnet = models.resnet18(weights='DEFAULT')
         self.features = nn.Sequential(*list(resnet.children())[:-2])  
         self.avgpool = nn.AvgPool2d(7)
-        self.fc = nn.Linear(512,6)
+        self.fc = nn.Linear(512,num_classes)
         self.fc2 = nn.Linear(4096,512)
         self.relu = nn.ReLU()
         

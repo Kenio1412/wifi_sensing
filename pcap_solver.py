@@ -8,14 +8,14 @@ from concurrent.futures import ThreadPoolExecutor
 import contextvars
 
 class PcapSolver:
-    def __init__(self, filePath,filter=None):
+    def __init__(self, filePath = None,filter=None):
         self.filePath = filePath
         self.cap = None
+        self.filter = None
         if filter:
             self.filter = filter
-            self.cap = pyshark.FileCapture(filePath,display_filter=filter)
-        else:
-            self.cap = pyshark.FileCapture(filePath)
+        if filePath:
+            self.cap = pyshark.FileCapture(filePath,display_filter=self.filter)
 
     def info_detailed(self):    
         cap = self.cap

@@ -7,6 +7,10 @@ from img_loader import img_loader
 import os
 from tensorboardX import SummaryWriter
 import torchvision.transforms as transforms
+import config
+from eval_load import Eval_Loader
+from conn.conn import Conn
+from eval import eval
 
 
 def get_model(model_name, input_size, hidden_size, num_classes):
@@ -200,10 +204,53 @@ def run(device,type = 'seq'):
 
 
         print("Training finished.")
+
+
+
+def pi_run():
+    filename = '3'
+   # 本地路径保存地址
+    local_path = config.eval_pcap_path + '/' + filename + '.pcap'
+
+    # 检查本地路径是否存在，若存在则删除
+    if os.path.exists(local_path):
+        os.remove(local_path)
+        print("File removed successfully")
+    else:
+        print("File does not exist")
+
+    # 树莓派抓包文件路径
+    pi_pcap_path = config.pi_pcap_path + '/' + filename + '.pcap'
+
+    raspberry_pi_ip = config.raspberry_pi_ip
+    username = config.username
+    raspberry_pi_password = config.raspberry_pi_password
     
+    conn = Conn(raspberry_pi_ip, username, raspberry_pi_password, local_path, pi_pcap_path)
+
+    conn.connect()
+    conn.set_monitor_mode(config.channel) # 设置树莓派的信道
+    conn.start_capture(duration=config.capture_time,pcap_path=pi_pcap_path) # 开始抓包
+    conn.transfer_file(local_path=local_path) # 传输文件到本地
+    conn.disconnect() 
+
+
+
+    pcap_path = config.eval_pcap_path  + '/' + filename + '.pcap' # 本机抓包文件路径
+    csv_path = config.eval_csv_path + '/' + filename + '.csv'  # 本机csv文件路径
+    group_path = config.eval_csv_group_path + '/' + filename + '.csv' # 本机分组后的csv文件路径
+    img_path = config.eval_csv_img_path + '/' + filename + '.jpg'   # 本机图片文件路径
+    target_mac = config.bobMac                      # 目标MAC地址
+    eval_loader = Eval_Loader(filter= 'wlan.addr == {}'.format(target_mac))
+
+    eval_loader.pcap_to_img(pcap_path=pcap_path, csv_path=csv_path, group_path=group_path, img_path=img_path, target_mac=target_mac)
+
+    eval(img_path=img_path)
 
 if __name__ == "__main__":
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
-    run(device,type='img')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # print(f"Using device: {device}")
+    # run(device,type='img')
+
+    pi_run()
     
