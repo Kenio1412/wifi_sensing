@@ -30,8 +30,8 @@ def get_label(pkt_label, csi_label):
 def main():
     pkt_dir = r'G:\Coding\wifi_sensing\pkt_img'
     csi_dir = r'G:\Coding\wifi_sensing\csi_img'
-    model_pkt_path = r'G:\Coding\wifi_sensing\netual_model\pkt_model_2.pth'
-    model_csi_path = r'G:\Coding\wifi_sensing\netual_model\csi_model3.pth'
+    model_pkt_path = r'G:\Coding\wifi_sensing\netual_model\pkt_model.pth'
+    model_csi_path = r'G:\Coding\wifi_sensing\netual_model\csi_model.pth'
     transform = transforms.ToTensor()
     pkt_dataset = test_pkt_loader(pkt_dir, transform)
     csi_dataset = test_csi_loader(csi_dir, transform)
@@ -70,7 +70,7 @@ def main():
 
             pkt_pred = torch.argmax(pkt_out, dim=1).item()
             csi_pred = torch.argmax(csi_out, dim=1).item()
-
+            
             true_label = label_mapping[idx]
             fused = get_label(pkt_pred, csi_pred)
 

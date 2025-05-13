@@ -72,7 +72,7 @@ def run(device,type = 'seq'):
         optimizer = get_optimizer(model, optimizer_name, learning_rate)
         loss_function = get_loss_function(loss_name)
         scheduler = get_scheduler(optimizer, scheduler_name, step_size, gamma)
-        dataset = CSIDataset(root_dir='G:\\Coding\\wifi_sensing\\csi_img', transform=None)
+        dataset = CSIDataset(root_dir='F:\\Coding\\wifi_sensing\\csi_img', transform=None)
         # print(len(dataset))
         if len(dataset) == 0:
             print("数据集为空，请检查数据集路径和文件格式。")
@@ -147,6 +147,7 @@ def run(device,type = 'seq'):
                     total += labels.size(0)
                     correct += (predicted == labels).sum()
                 print('Test Acc：%.3f%%' % (100. * correct / total))
+                log_file.write('Test Acc：%.3f%%' % (100. * correct / total))
                 acc = 100. * correct / total
 
                 if acc > best_acc:
