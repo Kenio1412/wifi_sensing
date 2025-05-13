@@ -59,8 +59,8 @@ class PcapSolver:
                 # print(f"Destination Address (DA): {packet.wlan.da}")
                 # ta = packet.wlan.ta
                 ra = packet.wlan.ra
-                if ra != bob_mac:
-                    continue
+                # if ra != bob_mac:
+                #     continue
                 bob_num += 1
                 # sa = packet.wlan.sa
                 # da = packet.wlan.da
@@ -79,32 +79,34 @@ class PcapSolver:
                 RA.add(ra)
                 # SA.add(sa)
                 # DA.add(da)
-        print(f"Total packets: {n}")
-        print(f"Bad packets: {bad}")
-        print(f"you have {n-bad} packets with WLAN layer.")
-        print(f"Bob's packets: {bob_num}")
-        # print("Unique Transmitter Addresses (TA):", len(TA) )
+        
+        # print(f"Total packets: {n}")
+        # print(f"Bad packets: {bad}")
+        # print(f"you have {n-bad} packets with WLAN layer.")
+        # print(f"Bob's packets: {bob_num}")
+        # # print("Unique Transmitter Addresses (TA):", len(TA) )
         print("Unique Receiver Addresses (RA):", len(RA))
-        # print("Unique Source Addresses (SA):", len(SA))
-        # print("Unique Destination Addresses (DA):", len(DA))
-        # 将结果写入文件
-        with open('1_1_mac.txt', 'w') as f:
-            f.write(f"Total packets: {n}\n")
-            f.write(f"Bad packets: {bad}\n")
-            f.write(f"you have {n-bad} packets with WLAN layer.\n")
-            f.write(f"Bob's packets: {bob_num}\n")
-            # f.write("Unique Transmitter Addresses (TA):\n")
-            # for ta in TA:
-            #     f.write(f"{ta}\n")
-            f.write("Unique Receiver Addresses (RA):\n")
-            for ra in RA:
-                f.write(f"{ra}\n")
-            # f.write("Unique Source Addresses (SA):\n")
-            # for sa in SA:
-            #     f.write(f"{sa}\n")
-            # f.write("Unique Destination Addresses (DA):\n")
-            # for da in DA:
-            #     f.write(f"{da}\n")
+        print(RA)
+        # # print("Unique Source Addresses (SA):", len(SA))
+        # # print("Unique Destination Addresses (DA):", len(DA))
+        # # 将结果写入文件
+        # with open('1_1_mac.txt', 'w') as f:
+        #     f.write(f"Total packets: {n}\n")
+        #     f.write(f"Bad packets: {bad}\n")
+        #     f.write(f"you have {n-bad} packets with WLAN layer.\n")
+        #     f.write(f"Bob's packets: {bob_num}\n")
+        #     # f.write("Unique Transmitter Addresses (TA):\n")
+        #     # for ta in TA:
+        #     #     f.write(f"{ta}\n")
+        #     f.write("Unique Receiver Addresses (RA):\n")
+        #     for ra in RA:
+        #         f.write(f"{ra}\n")
+        #     # f.write("Unique Source Addresses (SA):\n")
+        #     # for sa in SA:
+        #     #     f.write(f"{sa}\n")
+        #     # f.write("Unique Destination Addresses (DA):\n")
+        #     # for da in DA:
+        #     #     f.write(f"{da}\n")
 
     def save_pcap(self):
         cap = self.cap
@@ -243,34 +245,45 @@ class PcapSolver:
                 # print(f"Bob's packets saved to {output_path}")
 
 if __name__ == "__main__":
-    filePath = 'pcap/1_1.pcap'
-    bob_mac = 'f0:57:a6:a6:b6:b6'
-    lxn_mac = '84:1b:77:6b:d5:3c'
-    filter = f'wlan.addr == {lxn_mac}'
+    filePath = 'pcap/1_120.pcap'
+    filePath = r'eval_data\pcap\4.pcap'
 
-    if(os.path.exists(filePath)):
-        print(f"File {filePath} does exist.")
-    else:
-        print(f"{filePath} does not exist!")
+    so = PcapSolver(filePath)
+    so.info_mac()
 
 
-    solver = PcapSolver(filePath,filter)
-    source_list = []
-    for file in os.listdir('pcap'):
-        if not file.endswith('.pcap'):
-            continue
-        if file.startswith('output'):
-            continue
-        file_name = file.split('.')[0]
-        file_name, num = file_name.split('_')
-        num = int(num)
-        if (file_name == '2' or file_name == '3' or file_name == '4') and num > 15 and num <= 30:
-            source_list.append(file)
-        # if file_name == '1' and num > 45:
-        #     source_list.append(file)
-        # if file_name == '5' :
-        #     source_list.append(file)
-    solver.batch_extract(source_dir='pcap', output_dir='csv',target_mac=lxn_mac,source_list=source_list,offset=15)
-    # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
-    # solver.info_detailed()
-    # solver.info_mac()
+
+
+
+
+    # filePath = 'pcap/1_1.pcap'
+    # bob_mac = 'f0:57:a6:a6:b6:b6'
+    # lxn_mac = '84:1b:77:6b:d5:3c'
+    # filter = f'wlan.addr == {lxn_mac}'
+
+    # if(os.path.exists(filePath)):
+    #     print(f"File {filePath} does exist.")
+    # else:
+    #     print(f"{filePath} does not exist!")
+
+
+    # solver = PcapSolver(filePath,filter)
+    # source_list = []
+    # for file in os.listdir('pcap'):
+    #     if not file.endswith('.pcap'):
+    #         continue
+    #     if file.startswith('output'):
+    #         continue
+    #     file_name = file.split('.')[0]
+    #     file_name, num = file_name.split('_')
+    #     num = int(num)
+    #     if (file_name == '2' or file_name == '3' or file_name == '4') and num > 15 and num <= 30:
+    #         source_list.append(file)
+    #     # if file_name == '1' and num > 45:
+    #     #     source_list.append(file)
+    #     # if file_name == '5' :
+    #     #     source_list.append(file)
+    # solver.batch_extract(source_dir='pcap', output_dir='csv',target_mac=lxn_mac,source_list=source_list,offset=15)
+    # # asyncio.run(solver.batch_extract(source_dir='pcap', output_dir='csv'))
+    # # solver.info_detailed()
+    # # solver.info_mac()

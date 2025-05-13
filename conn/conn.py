@@ -7,7 +7,7 @@ import config
 
 
 class Conn:
-    def __init__(self, raspberry_pi_ip, username, raspberry_pi_password, local_path, pcap_path):
+    def __init__(self, raspberry_pi_ip, username, raspberry_pi_password, local_path = None, pcap_path = None):
         """
         @brief: 初始化连接类
         @param raspberry_pi_ip: 树莓派IP地址
@@ -53,11 +53,10 @@ class Conn:
         if self.ssh:
             self.ssh.close()
         print("Connection closed")
-
-    def set_monitor_mode(self, channel):
+    
+    def prepare_environment(self):
         """
-        @brief: 设置网卡监听模式
-        @param channel: 信道
+        @brief: 准备环境
         @return: None
         """
         cmd = ""
@@ -66,10 +65,18 @@ class Conn:
         cmd += "&& source setup_env.sh"
         cmd += "&& cd patches/bcm43455c0/7_45_206/nexmon/"
         cmd += "&& make install-firmware"
+        
+        self.channel.send(cmd + "\n")
+        time.sleep(22)
+        print("Environment prepared successfully.")
 
-        # self.channel.send(cmd + f"sudo airmon-ng start wlan0 {channel}\n")
-        # time.sleep(10)  # 等待一段时间以确保命令执行完成
-        # print("Firmware installed successfully.")
+    def set_monitor_mode(self, channel):
+        """
+        @brief: 设置网卡监听模式
+        @param channel: 信道
+        @return: None
+        """
+
 
         self.channel.send(f"sudo airmon-ng start wlan0 {channel}\n")
 

@@ -72,6 +72,7 @@ def eval( img_path='eval_data/csv_img/temp.jpg'):
         outputs,outpspa,outpcga,afespa,afecga = model(images)
         _, predicted = torch.max(outputs.data, 1)
         print(f'Predicted class: {predicted.item()}')
+        return predicted.item()
 
 if __name__ == "__main__":
     #打印当前路径

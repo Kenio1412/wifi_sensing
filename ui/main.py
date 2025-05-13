@@ -4,6 +4,8 @@ from ui.sub import SubWindow
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import QCoreApplication, QRect
 
+import config
+
 
 class MainWindow(QDialog,Ui_main):
     def __init__(self):
@@ -15,8 +17,17 @@ class MainWindow(QDialog,Ui_main):
     
     def action_button_clicked(self):
         dataIP = self.dataIP_Line.text()
+        if dataIP != "":
+            config.raspberry_pi_ip = dataIP
+
         dataPass = self.dataPass_Line.text()
+        if dataPass != "":
+            config.raspberry_pi_password = dataPass
+        
         csiIP = self.csiIP_Line.text()
+        """
+        TODO: 这里需要添加CSI的IP地址和密码
+        """
         csiPass = self.csiPass_Line.text()
         # print(f"Data IP: {dataIP}")
         # print(f"Data Password: {dataPass}")

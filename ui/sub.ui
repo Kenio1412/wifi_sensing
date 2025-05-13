@@ -16,14 +16,14 @@
   <widget class="QPushButton" name="back_Button">
    <property name="geometry">
     <rect>
-     <x>160</x>
+     <x>220</x>
      <y>240</y>
      <width>75</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
-    <string>返回</string>
+    <string>back</string>
    </property>
   </widget>
   <widget class="QTextBrowser" name="text_Browser">
@@ -34,6 +34,19 @@
      <width>256</width>
      <height>192</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="testButton">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>240</y>
+     <width>75</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>start</string>
    </property>
   </widget>
  </widget>

@@ -25,10 +25,13 @@ class Ui_Sub(object):
         Sub.resize(400, 300)
         self.back_Button = QPushButton(Sub)
         self.back_Button.setObjectName(u"back_Button")
-        self.back_Button.setGeometry(QRect(160, 240, 75, 24))
+        self.back_Button.setGeometry(QRect(220, 240, 75, 24))
         self.text_Browser = QTextBrowser(Sub)
         self.text_Browser.setObjectName(u"text_Browser")
         self.text_Browser.setGeometry(QRect(60, 20, 256, 192))
+        self.testButton = QPushButton(Sub)
+        self.testButton.setObjectName(u"testButton")
+        self.testButton.setGeometry(QRect(90, 240, 75, 24))
 
         self.retranslateUi(Sub)
 
@@ -37,6 +40,7 @@ class Ui_Sub(object):
 
     def retranslateUi(self, Sub):
         Sub.setWindowTitle(QCoreApplication.translate("Sub", u"Dialog", None))
-        self.back_Button.setText(QCoreApplication.translate("Sub", u"\u8fd4\u56de", None))
+        self.back_Button.setText(QCoreApplication.translate("Sub", u"back", None))
+        self.testButton.setText(QCoreApplication.translate("Sub", u"start", None))
     # retranslateUi
 
